@@ -1016,9 +1016,8 @@ namespace GongSolutions.Wpf.DragDrop
         private static void DropTarget_PreviewDragOver(object sender, DragEventArgs e)
         {
             var elementPosition = e.GetPosition((IInputElement)sender);
-         
 
-            var dropInfo = new DropInfo(sender, e, m_DragInfo);
+            var dropInfo = new DropInfo(sender, e, m_DragInfo); 
             var dropHandler = TryGetDropHandler(dropInfo, sender as UIElement);
             var itemsControl = dropInfo.VisualTarget;
 
@@ -1066,7 +1065,8 @@ namespace GongSolutions.Wpf.DragDrop
                     }
                   
                 }
-                if (tempAdornerPos.X > 0)
+                
+                if (tempAdornerPos.X > 0)  // fix for another flickering
                 {
                     DragAdorner.MousePosition = _adornerPos;
                     DragAdorner.InvalidateVisual();
