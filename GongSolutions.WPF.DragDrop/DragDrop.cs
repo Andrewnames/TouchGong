@@ -432,7 +432,7 @@ namespace GongSolutions.Wpf.DragDrop
 
             if ((bool)e.NewValue == true)
             {
-               uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
+                uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
                 uiElement.PreviewTouchDown += DragSource_PreviewMouseLeftButtonDown;
                 uiElement.StylusMove += DragSource_PreviewMouseMove;
                 uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
@@ -442,7 +442,7 @@ namespace GongSolutions.Wpf.DragDrop
             }
             else
             {
-               uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
+                uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
                 uiElement.PreviewTouchDown -= DragSource_PreviewMouseLeftButtonDown;//**********touch
                 uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
                 uiElement.PreviewTouchUp -= DragSource_PreviewMouseLeftButtonUp;
@@ -529,15 +529,11 @@ namespace GongSolutions.Wpf.DragDrop
 
                 if (content != null && content != BindingOperations.DisconnectedSource)
                 {
-
                     initialDragTarget = bs;
-
                 }
                 if (content != null && content == BindingOperations.DisconnectedSource)
                 {
-
                     bs = initialDragTarget;
-
                 }
                 if (bs != null)
                 {
@@ -545,12 +541,11 @@ namespace GongSolutions.Wpf.DragDrop
                     factory.SetValue(Image.SourceProperty, bs);
                     factory.SetValue(RenderOptions.EdgeModeProperty, EdgeMode.Aliased);
                     factory.SetValue(RenderOptions.BitmapScalingModeProperty, BitmapScalingMode.HighQuality);
-                    factory.SetValue(FrameworkElement.WidthProperty, bs.Width* GetAdornerScaleFactorProperty(m_DragInfo.VisualSource));
+                    factory.SetValue(FrameworkElement.WidthProperty, bs.Width * GetAdornerScaleFactorProperty(m_DragInfo.VisualSource));
                     factory.SetValue(FrameworkElement.HeightProperty, bs.Height * GetAdornerScaleFactorProperty(m_DragInfo.VisualSource));
                     factory.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
                     factory.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
                     template = new DataTemplate { VisualTree = factory };
-
                 }
             }
 
@@ -623,10 +618,10 @@ namespace GongSolutions.Wpf.DragDrop
 
             var dpiX = DpiHelper.DpiX;
             var dpiY = DpiHelper.DpiY;
-           
+
             var bounds = VisualTreeHelper.GetDescendantBounds(target);
             var dpiBounds = DpiHelper.LogicalRectToDevice(bounds);
-            
+
 
 
             var rtb = new RenderTargetBitmap((int)Math.Ceiling(dpiBounds.Width),
@@ -823,7 +818,7 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DragSource_PreviewMouseLeftButtonDown(object sender, InputEventArgs e)
         {
-            
+
             // Ignore the click if clickCount != 1 or the user has clicked on a scrollbar.
             var elementPosition = e.GetPosition((IInputElement)sender);
             if (//e.ClickCount != 1
@@ -847,7 +842,7 @@ namespace GongSolutions.Wpf.DragDrop
 
 
             m_DragInfo = new DragInfo(sender, e);
-            Debug.WriteLine($"dragInfo by {e.Device} initialized  at {DateTime.Now}");
+           // Debug.WriteLine($"dragInfo by {e.Device} initialized  at {DateTime.Now}");
 
             var iCOntrol = sender as ItemsControl;// switch off autoscroll for touch
             if (iCOntrol != null)
@@ -929,7 +924,7 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DragSource_PreviewMouseMove(object sender, InputEventArgs e)
         {
-            
+
             if (m_DragInfo != null && !m_DragInProgress)
             {
                 // do nothing if mouse left button is released
@@ -986,7 +981,7 @@ namespace GongSolutions.Wpf.DragDrop
                             m_DragInfo = null;
                         }
                     }
-                }  
+                }
             }
         }
 
@@ -1017,7 +1012,7 @@ namespace GongSolutions.Wpf.DragDrop
         {
             var elementPosition = e.GetPosition((IInputElement)sender);
 
-            var dropInfo = new DropInfo(sender, e, m_DragInfo); 
+            var dropInfo = new DropInfo(sender, e, m_DragInfo);
             var dropHandler = TryGetDropHandler(dropInfo, sender as UIElement);
             var itemsControl = dropInfo.VisualTarget;
 
@@ -1027,11 +1022,11 @@ namespace GongSolutions.Wpf.DragDrop
             {
                 CreateDragAdorner(dropInfo);
             }
-           
+
             if (DragAdorner != null)
             {
                 var tempAdornerPos = e.GetPosition(DragAdorner.AdornedElement);
-              
+
                 if (tempAdornerPos.X >= 0 && tempAdornerPos.Y >= 0)
                 {
                     _adornerPos = tempAdornerPos;
@@ -1042,36 +1037,38 @@ namespace GongSolutions.Wpf.DragDrop
                 {
                     _adornerSize = DragAdorner.RenderSize;
                 }
-            
 
-                if (m_DragInfo != null )
+                if (m_DragInfo != null)
                 {
                     // move the adorner
-                    var offsetX = _adornerSize.Width * -GetDragMouseAnchorPoint(m_DragInfo.VisualSource).X;
-                    var offsetY = _adornerSize.Height * -GetDragMouseAnchorPoint(m_DragInfo.VisualSource).Y;
-            
+                    var mouseAnchorXPosition = GetDragMouseAnchorPoint(m_DragInfo.VisualSource).X;
+                    var offsetX = _adornerSize.Width * -mouseAnchorXPosition;
+
+                    var mouseAnchorYPosition = GetDragMouseAnchorPoint(m_DragInfo.VisualSource).Y;
+                    var offsetY = _adornerSize.Height * -mouseAnchorYPosition;
+
                     _adornerPos.Offset(offsetX, offsetY);
-                   
+
                     var maxAdornerPosX = DragAdorner.AdornedElement.RenderSize.Width;
 
                     var adornerPosRightX = (_adornerPos.X + _adornerSize.Width);
                     if (adornerPosRightX > maxAdornerPosX)
                     {
                         _adornerPos.Offset(-adornerPosRightX + maxAdornerPosX, 0);
+
                     }
                     if (_adornerPos.Y < 0)
                     {
                         _adornerPos.Y = 0;
                     }
-                  
                 }
-                
-                if (tempAdornerPos.X > 0)  // fix for another flickering
+
+                if (tempAdornerPos.X > 0 && _adornerSize.Height>0)  // fix for another flickering
                 {
                     DragAdorner.MousePosition = _adornerPos;
                     DragAdorner.InvalidateVisual();
                 }
-                
+
             }
 
             if (HitTestUtilities.HitTest4Type<ScrollBar>(sender, elementPosition)
@@ -1108,7 +1105,7 @@ namespace GongSolutions.Wpf.DragDrop
                     if (DropTargetAdorner != null)
                     {
                         DropTargetAdorner.DropInfo = dropInfo;
-                     DropTargetAdorner.InvalidateVisual();
+                        DropTargetAdorner.InvalidateVisual();
                     }
                 }
             }
