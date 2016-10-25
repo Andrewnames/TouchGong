@@ -319,7 +319,8 @@ namespace GongSolutions.Wpf.DragDrop
 
         public static IDropTarget GetDropHandler(UIElement target)
         {
-            return (IDropTarget)target.GetValue(DropHandlerProperty);
+            var dropHandler = target.GetValue(DropHandlerProperty) as IDropTarget;
+            return dropHandler;
         }
 
         public static void SetDropHandler(UIElement target, IDropTarget value)
@@ -434,10 +435,10 @@ namespace GongSolutions.Wpf.DragDrop
             {
                 uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
                 uiElement.PreviewTouchDown += DragSource_PreviewMouseLeftButtonDown;
-                uiElement.StylusMove += DragSource_PreviewMouseMove;
                 uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
                 uiElement.PreviewTouchUp += DragSource_PreviewMouseLeftButtonUp;
                 uiElement.PreviewMouseMove += DragSource_PreviewMouseMove;
+                uiElement.StylusMove += DragSource_PreviewMouseMove;
                 uiElement.QueryContinueDrag += DragSource_QueryContinueDrag;
             }
             else
@@ -822,9 +823,10 @@ namespace GongSolutions.Wpf.DragDrop
             // Ignore the click if clickCount != 1 or the user has clicked on a scrollbar.
             var elementPosition = e.GetPosition((IInputElement)sender);
             if (//e.ClickCount != 1
-                //|| (sender as UIElement).IsDragSourceIgnored()
+               // ||
+                //(sender as UIElement).IsDragSourceIgnored()
                 // || (e.Source as UIElement).IsDragSourceIgnored()
-                // || 
+                // ||
                  (e.OriginalSource as UIElement).IsDragSourceIgnored()
                 || (sender is TabControl) && !HitTestUtilities.HitTest4Type<TabPanel>(sender, elementPosition)
                 || HitTestUtilities.HitTest4Type<RangeBase>(sender, elementPosition)
@@ -878,7 +880,7 @@ namespace GongSolutions.Wpf.DragDrop
                 }
             }
 
-            ((ItemsControl)sender).ReleaseStylusCapture();
+           // ((ItemsControl)sender).ReleaseStylusCapture();
 
 
 
@@ -924,6 +926,7 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DragSource_PreviewMouseMove(object sender, InputEventArgs e)
         {
+            Debug.Write(m_DragInfo);
 
             if (m_DragInfo != null && !m_DragInProgress)
             {
@@ -938,8 +941,9 @@ namespace GongSolutions.Wpf.DragDrop
 
                 var abs = Math.Abs(position.X - dragStart.X);
                 var abs2 = Math.Abs(position.Y - dragStart.Y);
-                if (abs > SystemParameters.MinimumHorizontalDragDistance ||
-                     abs2 > SystemParameters.MinimumVerticalDragDistance)
+                if (m_DragInfo.VisualSource == sender
+            && (abs > SystemParameters.MinimumHorizontalDragDistance ||
+                     abs2 > SystemParameters.MinimumVerticalDragDistance))
                 {
                     var dragHandler = TryGetDragHandler(m_DragInfo, sender as UIElement);
                     if (dragHandler.CanStartDrag(m_DragInfo))
@@ -1230,6 +1234,7 @@ namespace GongSolutions.Wpf.DragDrop
         private static Point _adornerPos;
         private static Size _adornerSize;
         private static BitmapSource initialDragTarget;
+     
 
 
 
@@ -1242,7 +1247,10 @@ namespace GongSolutions.Wpf.DragDrop
             where T : InputEventArgs
         {
             if (e is MouseEventArgs)
-                return (e as MouseEventArgs).GetPosition(obj);
+            {
+                var position = (e as MouseEventArgs).GetPosition(obj);
+                return position;
+            }
             else if (e is TouchEventArgs)
             {
                 var position = (e as TouchEventArgs).GetTouchPoint(obj).Position;
