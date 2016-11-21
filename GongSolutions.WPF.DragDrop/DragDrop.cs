@@ -112,7 +112,7 @@ namespace GongSolutions.Wpf.DragDrop
         }
 
         public static readonly DependencyProperty DefaultDragAdornerOpacityProperty =
-          DependencyProperty.RegisterAttached("DefaultDragAdornerOpacity", typeof(double), typeof(DragDrop), new PropertyMetadata(0.8));
+          DependencyProperty.RegisterAttached("DefaultDragAdornerOpacity", typeof(double), typeof(DragDrop), new PropertyMetadata(1.0));
 
         public static double GetDefaultDragAdornerOpacity(UIElement target)
         {
@@ -319,7 +319,10 @@ namespace GongSolutions.Wpf.DragDrop
 
         public static IDropTarget GetDropHandler(UIElement target)
         {
-            var dropHandler = target.GetValue(DropHandlerProperty) as IDropTarget;
+            var value = target.GetValue(DropHandlerProperty);
+
+            var dropHandler = value as IDropTarget;
+
             return dropHandler;
         }
 
@@ -804,6 +807,7 @@ namespace GongSolutions.Wpf.DragDrop
         /// <returns></returns>
         private static IDropTarget TryGetDropHandler(DropInfo dropInfo, UIElement sender)
         {
+           // Debug.WriteLine(sender);
             IDropTarget dropHandler = null;
             if (dropInfo != null && dropInfo.VisualTarget != null)
             {
@@ -926,8 +930,7 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DragSource_PreviewMouseMove(object sender, InputEventArgs e)
         {
-            Debug.Write(m_DragInfo);
-
+          
             if (m_DragInfo != null && !m_DragInProgress)
             {
                 // do nothing if mouse left button is released
@@ -941,7 +944,7 @@ namespace GongSolutions.Wpf.DragDrop
 
                 var abs = Math.Abs(position.X - dragStart.X);
                 var abs2 = Math.Abs(position.Y - dragStart.Y);
-                if (m_DragInfo.VisualSource == sender
+                if (m_DragInfo.VisualSource.Equals(sender)
             && (abs > SystemParameters.MinimumHorizontalDragDistance ||
                      abs2 > SystemParameters.MinimumVerticalDragDistance))
                 {
@@ -1014,10 +1017,13 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DropTarget_PreviewDragOver(object sender, DragEventArgs e)
         {
+
+           
             var elementPosition = e.GetPosition((IInputElement)sender);
 
             var dropInfo = new DropInfo(sender, e, m_DragInfo);
             var dropHandler = TryGetDropHandler(dropInfo, sender as UIElement);
+            Debug.WriteLine($"************************sender is {sender}");
             var itemsControl = dropInfo.VisualTarget;
 
             dropHandler.DragOver(dropInfo);
