@@ -2,12 +2,14 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using GongSolutions.Wpf.DragDrop.Icons;
 using GongSolutions.Wpf.DragDrop.Utilities;
 using System.Windows.Media.Imaging;
@@ -17,6 +19,55 @@ namespace GongSolutions.Wpf.DragDrop
 
     public static class DragDrop
     {
+
+        static DoubleAnimation animation = new DoubleAnimation
+        {
+            From = 1,
+            To = 1.1,
+            Duration = new TimeSpan(0, 0, 0, 0, 50),
+            AutoReverse = false,
+            EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseOut },
+        };
+
+
+        static DragDrop()              //static constructor initializing timer for break free feature
+        {
+            dispatcherTimer.Tick += dispatcherTimer_Tick;
+        }
+
+
+        //timer action for break free effect
+        private static void dispatcherTimer_Tick(object sender, EventArgs e)
+        {
+            var sourceItem = m_DragInfo?.SourceItem;
+            var uiElement = sourceItem as UIElement;
+            var visualSourceItem = m_DragInfo?.VisualSourceItem;
+
+            if (uiElement != null && !CanDragStart)
+            {
+                AnimateScale(uiElement);
+            }
+            else if (uiElement == null && !CanDragStart && visualSourceItem != null)
+            {
+                AnimateScale(visualSourceItem);
+            }
+        }
+
+        private static void AnimateScale(UIElement uiElement)
+        {
+            Debug.WriteLine($"timer ticked at {DateTime.Now}");
+            uiElement.RenderTransformOrigin = new Point(0.5, 0.5);
+            ScaleTransform scaleTrans = new ScaleTransform();
+            uiElement.RenderTransform = scaleTrans;
+
+            scaleTrans.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+            scaleTrans.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+
+            //var frameworkElement = (uiElement as FrameworkElement);
+            //    frameworkElement.BringToFront();
+            CanDragStart = true;
+        }
+
         public static readonly DataFormat DataFormat = DataFormats.GetDataFormat("GongSolutions.Wpf.DragDrop");
 
 
@@ -111,6 +162,29 @@ namespace GongSolutions.Wpf.DragDrop
             target.SetValue(AdornerScaleFactorProperty, value);
         }
 
+
+        //********************************************
+        /// <summary>
+        /// Break free timer implementation. 
+        /// </summary>
+        public static readonly DependencyProperty BreakFreeTriggerTime =
+            DependencyProperty.RegisterAttached("BreakFreeTriggerTime", typeof(int), typeof(DragDrop), new PropertyMetadata(1500));
+
+        public static int GetBreakFreeTriggerTime(UIElement target)
+        {
+            return (int)target.GetValue(BreakFreeTriggerTime);
+        }
+
+        public static void SetBreakFreeTriggerTime(UIElement target, int value)
+        {
+            target.SetValue(BreakFreeTriggerTime, value);
+        }
+
+
+
+        /// <summary>
+        /// opacity property for default adorner
+        /// </summary>
         public static readonly DependencyProperty DefaultDragAdornerOpacityProperty =
           DependencyProperty.RegisterAttached("DefaultDragAdornerOpacity", typeof(double), typeof(DragDrop), new PropertyMetadata(1.0));
 
@@ -807,7 +881,7 @@ namespace GongSolutions.Wpf.DragDrop
         /// <returns></returns>
         private static IDropTarget TryGetDropHandler(DropInfo dropInfo, UIElement sender)
         {
-           // Debug.WriteLine(sender);
+            // Debug.WriteLine(sender);
             IDropTarget dropHandler = null;
             if (dropInfo != null && dropInfo.VisualTarget != null)
             {
@@ -823,11 +897,29 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DragSource_PreviewMouseLeftButtonDown(object sender, InputEventArgs e)
         {
+            currentElement = sender as UIElement;
+            if (currentElement != null)
+            {
+                var isElementWithTimer = currentElement.ReadLocalValue(BreakFreeTriggerTime) != DependencyProperty.UnsetValue;
+                if (!isElementWithTimer)
+                {
+                    currentElement = null;
+                    CanDragStart = true;
+                }
+                else
+                {
+
+                    dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, GetBreakFreeTriggerTime(currentElement));
+                    dispatcherTimer.Start();
+                    CanDragStart = false;
+                }
+            }
+
 
             // Ignore the click if clickCount != 1 or the user has clicked on a scrollbar.
             var elementPosition = e.GetPosition((IInputElement)sender);
             if (//e.ClickCount != 1
-               // ||
+                // ||
                 //(sender as UIElement).IsDragSourceIgnored()
                 // || (e.Source as UIElement).IsDragSourceIgnored()
                 // ||
@@ -848,7 +940,7 @@ namespace GongSolutions.Wpf.DragDrop
 
 
             m_DragInfo = new DragInfo(sender, e);
-           // Debug.WriteLine($"dragInfo by {e.Device} initialized  at {DateTime.Now}");
+            // Debug.WriteLine($"dragInfo by {e.Device} initialized  at {DateTime.Now}");
 
             var iCOntrol = sender as ItemsControl;// switch off autoscroll for touch
             if (iCOntrol != null)
@@ -884,7 +976,7 @@ namespace GongSolutions.Wpf.DragDrop
                 }
             }
 
-           // ((ItemsControl)sender).ReleaseStylusCapture();
+            // ((ItemsControl)sender).ReleaseStylusCapture();
 
 
 
@@ -892,6 +984,10 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DragSource_PreviewMouseLeftButtonUp(object sender, InputEventArgs e)
         {
+            dispatcherTimer.Stop();
+            ResetScale();
+
+
             var elementPosition = e.GetPosition((IInputElement)sender);
             if ((sender is TabControl) && !HitTestUtilities.HitTest4Type<TabPanel>(sender, elementPosition))
             {
@@ -924,13 +1020,46 @@ namespace GongSolutions.Wpf.DragDrop
             m_DragInfo = null;
             m_ClickSupressItem = null;
 
+
+
         }
 
+        private static void ResetScale()
+        {
+            var sourceItem = m_DragInfo?.SourceItem;
+            var uiElement = sourceItem as UIElement;
+
+            var visualSourceItem = m_DragInfo?.VisualSourceItem;
+
+
+            if (uiElement == null)
+            {
+                uiElement = visualSourceItem;
+            }
+
+
+            if (currentElement != null && uiElement != null)
+            {
+                var isElementWithTimer = currentElement.ReadLocalValue(BreakFreeTriggerTime) != DependencyProperty.UnsetValue;
+                if (isElementWithTimer)
+                {
+                    ScaleTransform scaleTrans = new ScaleTransform();
+                    scaleTrans.ScaleX = GetAdornerScaleFactorProperty(uiElement);
+                    scaleTrans.ScaleY = GetAdornerScaleFactorProperty(uiElement);
+                    uiElement.RenderTransform = scaleTrans;
+                }
+            }
+        }
 
 
         private static void DragSource_PreviewMouseMove(object sender, InputEventArgs e)
         {
-          
+            if (!CanDragStart)
+            {
+                return;
+            }
+            dispatcherTimer.Stop();
+
             if (m_DragInfo != null && !m_DragInProgress)
             {
                 // do nothing if mouse left button is released
@@ -1018,12 +1147,11 @@ namespace GongSolutions.Wpf.DragDrop
         private static void DropTarget_PreviewDragOver(object sender, DragEventArgs e)
         {
 
-           
+
             var elementPosition = e.GetPosition((IInputElement)sender);
 
             var dropInfo = new DropInfo(sender, e, m_DragInfo);
             var dropHandler = TryGetDropHandler(dropInfo, sender as UIElement);
-            Debug.WriteLine($"************************sender is {sender}");
             var itemsControl = dropInfo.VisualTarget;
 
             dropHandler.DragOver(dropInfo);
@@ -1073,7 +1201,7 @@ namespace GongSolutions.Wpf.DragDrop
                     }
                 }
 
-                if (tempAdornerPos.X > 0 && _adornerSize.Height>0)  // fix for another flickering
+                if (tempAdornerPos.X > 0 && _adornerSize.Height > 0)  // fix for another flickering
                 {
                     DragAdorner.MousePosition = _adornerPos;
                     DragAdorner.InvalidateVisual();
@@ -1147,7 +1275,7 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DropTarget_PreviewDrop(object sender, DragEventArgs e)
         {
-
+            ResetScale();
             var dropInfo = new DropInfo(sender, e, m_DragInfo);
             var dropHandler = TryGetDropHandler(dropInfo, sender as UIElement);
             var dragHandler = TryGetDragHandler(m_DragInfo, sender as UIElement);
@@ -1240,11 +1368,9 @@ namespace GongSolutions.Wpf.DragDrop
         private static Point _adornerPos;
         private static Size _adornerSize;
         private static BitmapSource initialDragTarget;
-     
-
-
-
-
+        private static System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+        private static UIElement currentElement;
+        private static bool CanDragStart = true;
     }
 
     public static class InputEventArgsExtensions
@@ -1272,6 +1398,40 @@ namespace GongSolutions.Wpf.DragDrop
             return new Point();
         }
     }
+    public static class FrameworkElementExt
+    {
+        public static T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            //get parent item
+            DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+
+            //we've reached the end of the tree
+            if (parentObject == null) return null;
+
+            //check if the parent matches the type we're looking for
+            T parent = parentObject as T;
+            if (parent != null)
+                return parent;
+            else
+                return FindParent<T>(parentObject);
+        }
+
+        public static void BringToFront(this FrameworkElement element)
+        {
+            if (element == null) return;
+
+            Panel parent = FindParent<Panel>(element);
+
+            if (parent == null) return;
+
+            var maxZ = parent.Children.OfType<UIElement>()
+              .Where(x => x != element)
+              .Select(x => Panel.GetZIndex(x))
+              .Max();
+            Panel.SetZIndex(element, maxZ + 2);
+        }
+    }
+
 
 
 }
