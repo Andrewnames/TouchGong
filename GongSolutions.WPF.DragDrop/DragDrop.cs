@@ -63,8 +63,9 @@ namespace GongSolutions.Wpf.DragDrop
             scaleTrans.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
             scaleTrans.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
 
-            //var frameworkElement = (uiElement as FrameworkElement);
-            //    frameworkElement.BringToFront();
+            var frameworkElement = (uiElement as FrameworkElement);
+            frameworkElement.BringToFront();
+            SetDragSourceIgnore(currentElement, false);
             CanDragStart = true;
         }
 
@@ -904,14 +905,18 @@ namespace GongSolutions.Wpf.DragDrop
                 if (!isElementWithTimer)
                 {
                     currentElement = null;
+                  
                     CanDragStart = true;
                 }
                 else
                 {
-
                     dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, GetBreakFreeTriggerTime(currentElement));
                     dispatcherTimer.Start();
                     CanDragStart = false;
+                   // m_DragInfo = null;
+                    
+                   // ((ItemsControl)sender).ReleaseStylusCapture();
+                   // return;
                 }
             }
 
@@ -1056,6 +1061,7 @@ namespace GongSolutions.Wpf.DragDrop
         {
             if (!CanDragStart)
             {
+               
                 return;
             }
             dispatcherTimer.Stop();
@@ -1074,8 +1080,8 @@ namespace GongSolutions.Wpf.DragDrop
                 var abs = Math.Abs(position.X - dragStart.X);
                 var abs2 = Math.Abs(position.Y - dragStart.Y);
                 if (m_DragInfo.VisualSource.Equals(sender)
-            && (abs > SystemParameters.MinimumHorizontalDragDistance ||
-                     abs2 > SystemParameters.MinimumVerticalDragDistance))
+            && (abs-15 > SystemParameters.MinimumHorizontalDragDistance ||
+                     abs2-15 > SystemParameters.MinimumVerticalDragDistance))
                 {
                     var dragHandler = TryGetDragHandler(m_DragInfo, sender as UIElement);
                     if (dragHandler.CanStartDrag(m_DragInfo))
