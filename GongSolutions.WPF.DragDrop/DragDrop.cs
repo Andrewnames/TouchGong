@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -1108,13 +1107,24 @@ namespace GongSolutions.Wpf.DragDrop
                                 if (result == DragDropEffects.None)
                                     dragHandler.DragCancelled();
                             }
+                            catch (DragDropCanceledException ex)
+                            {
+                                //var source = m_DragInfo?.VisualSource;
+                                //if (source is ItemsControl)
+                                //{
+                                //    dynamic senderContext = (source as ItemsControl).DataContext;
+                                //    senderContext.DragCancelled();
+                                  
+                                //}
+
+                            }
                             catch (Exception ex)
                             {
                                 if (!dragHandler.TryCatchOccurredException(ex))
                                 {
                                     throw;
                                 }
-                            }
+                            }                           
                             finally
                             {
                                 m_DragInProgress = false;
@@ -1377,6 +1387,7 @@ namespace GongSolutions.Wpf.DragDrop
         private static System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
         private static UIElement currentElement;
         private static bool CanDragStart = true;
+        
     }
 
     public static class InputEventArgsExtensions
