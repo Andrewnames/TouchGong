@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -35,38 +36,7 @@ namespace GongSolutions.Wpf.DragDrop
         }
 
 
-        //timer action for break free effect
-        private static void dispatcherTimer_Tick(object sender, EventArgs e)
-        {
-            var sourceItem = m_DragInfo?.SourceItem;
-            var uiElement = sourceItem as UIElement;
-            var visualSourceItem = m_DragInfo?.VisualSourceItem;
-
-            if (uiElement != null && !CanDragStart)
-            {
-                AnimateScale(uiElement);
-            }
-            else if (uiElement == null && !CanDragStart && visualSourceItem != null)
-            {
-                AnimateScale(visualSourceItem);
-            }
-        }
-
-        private static void AnimateScale(UIElement uiElement)
-        {
-            Debug.WriteLine($"timer ticked at {DateTime.Now}");
-            uiElement.RenderTransformOrigin = new Point(0.5, 0.5);
-            ScaleTransform scaleTrans = new ScaleTransform();
-            uiElement.RenderTransform = scaleTrans;
-
-            scaleTrans.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
-            scaleTrans.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
-
-            var frameworkElement = (uiElement as FrameworkElement);
-            frameworkElement.BringToFront();
-            SetDragSourceIgnore(currentElement, false);
-            CanDragStart = true;
-        }
+       
 
         public static readonly DataFormat DataFormat = DataFormats.GetDataFormat("GongSolutions.Wpf.DragDrop");
 
@@ -510,28 +480,30 @@ namespace GongSolutions.Wpf.DragDrop
 
             if ((bool)e.NewValue == true)
             {
-                uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
+              
+             //   uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
                 uiElement.PreviewTouchDown += DragSource_PreviewMouseLeftButtonDown;
-                uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
+              //  uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
                 uiElement.PreviewTouchUp += DragSource_PreviewMouseLeftButtonUp;
-                uiElement.PreviewMouseMove += DragSource_PreviewMouseMove;
+            //   uiElement.PreviewMouseMove += DragSource_PreviewMouseMove;
                 uiElement.StylusMove += DragSource_PreviewMouseMove;
                 uiElement.QueryContinueDrag += DragSource_QueryContinueDrag;
+                
             }
             else
             {
-                uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
+              //  uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
                 uiElement.PreviewTouchDown -= DragSource_PreviewMouseLeftButtonDown;//**********touch
-                uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
+              //  uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
                 uiElement.PreviewTouchUp -= DragSource_PreviewMouseLeftButtonUp;
-                uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
+              //  uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
                 uiElement.StylusMove -= DragSource_PreviewMouseMove;//**********touch
                 uiElement.QueryContinueDrag -= DragSource_QueryContinueDrag;
+                
             }
         }
 
-
-
+     
 
         private static void IsDropTargetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -894,6 +866,89 @@ namespace GongSolutions.Wpf.DragDrop
             return dropHandler ?? DefaultDropHandler;
         }
 
+        //timer action for break free effect
+        private static void dispatcherTimer_Tick(object sender, EventArgs e)
+        {
+            var sourceItem = temp_DragInfo?.SourceItem;
+            var uiElement = sourceItem as UIElement;
+
+          
+            var visualSourceItem = temp_DragInfo?.VisualSourceItem;
+           
+            var idleTickCount = MouseUtilities.GetIdleTickCount();
+            Debug.WriteLine($"last interaction was  = {idleTickCount} ticks ago");
+            if (idleTickCount > 100) // user not interacting with control
+            {
+                dispatcherTimer.Stop();
+                return;
+            }
+            if (uiElement != null && !(uiElement.IsMouseOver)) return;
+            if (uiElement != null && !CanDragStart)
+            {
+                AnimateScale(uiElement);
+            }
+            else if (uiElement == null && !CanDragStart && visualSourceItem != null)
+            {
+                AnimateScale(visualSourceItem);
+            }
+        }
+
+        private static void AnimateScale(UIElement uiElement)
+        {
+           
+
+            CanDragStart = true;
+            var iCOntrol = currentElement as ItemsControl;
+            var parent = iCOntrol?.Parent as ScrollViewer;
+            m_DragInfo = temp_DragInfo;
+            Debug.WriteLine($"timer ticked at {DateTime.Now} with m_DragInfo = {m_DragInfo}");
+            if (parent != null) parent.PanningMode = PanningMode.None;
+
+            uiElement.RenderTransformOrigin = new Point(0.5, 0.5);
+            ScaleTransform scaleTrans = new ScaleTransform();
+            uiElement.RenderTransform = scaleTrans;
+
+            scaleTrans.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+            scaleTrans.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+
+            //var frameworkElement = (uiElement as FrameworkElement);
+            //frameworkElement.BringToFront();
+           
+        }
+
+        private static void ResetScale()
+        {
+            if (m_DragInfo == null)
+            {
+                m_DragInfo = temp_DragInfo;
+            }
+            var sourceItem = m_DragInfo?.SourceItem;
+            var uiElement = sourceItem as UIElement;
+
+            var visualSourceItem = m_DragInfo?.VisualSourceItem;
+
+
+            if (uiElement == null)
+            {
+                uiElement = visualSourceItem;
+            }
+
+
+            if (currentElement != null && uiElement != null)
+            {
+                SetDragSourceIgnore(currentElement, true);
+                var isElementWithTimer = currentElement.ReadLocalValue(BreakFreeTriggerTime) != DependencyProperty.UnsetValue;
+                if (isElementWithTimer)
+                {
+                    ScaleTransform scaleTrans = new ScaleTransform();
+                    scaleTrans.ScaleX = GetAdornerScaleFactorProperty(uiElement);
+                    scaleTrans.ScaleY = GetAdornerScaleFactorProperty(uiElement);
+                    uiElement.RenderTransform = scaleTrans;
+                }
+                currentElement = null;
+            }
+        }
+
 
         private static void DragSource_PreviewMouseLeftButtonDown(object sender, InputEventArgs e)
         {
@@ -909,12 +964,16 @@ namespace GongSolutions.Wpf.DragDrop
                 }
                 else
                 {
-                    dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, GetBreakFreeTriggerTime(currentElement));
-                    dispatcherTimer.Start();
                     CanDragStart = false;
+                    dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, GetBreakFreeTriggerTime(currentElement));
+                    
+                    InitDragInfo(sender, e);
+                    temp_DragInfo = m_DragInfo;
+                    dispatcherTimer.Start();
+                   
                    // m_DragInfo = null;
                     
-                   // ((ItemsControl)sender).ReleaseStylusCapture();
+                   ((ItemsControl)sender).ReleaseStylusCapture();
                    // return;
                 }
             }
@@ -942,16 +1001,24 @@ namespace GongSolutions.Wpf.DragDrop
                 return;
             }
 
-
-            m_DragInfo = new DragInfo(sender, e);
-            // Debug.WriteLine($"dragInfo by {e.Device} initialized  at {DateTime.Now}");
-
-            var iCOntrol = sender as ItemsControl;// switch off autoscroll for touch
-            if (iCOntrol != null)
+            var iCOntrol = sender as ItemsControl; // switch off autoscroll for touch
+            if (iCOntrol != null )
             {
                 var parent = iCOntrol.Parent as ScrollViewer;
-                if (parent != null) parent.PanningMode = PanningMode.None;
+                if (parent != null)
+                {
+                    parent.PanningMode = PanningMode.None;
+                }
             }
+
+            InitDragInfo(sender, e);
+           
+        }
+
+        private static void InitDragInfo(object sender, InputEventArgs e)
+        {
+            m_DragInfo = new DragInfo(sender, e);
+            // Debug.WriteLine($"dragInfo by {e.Device} initialized  at {DateTime.Now}");
 
             if (m_DragInfo.VisualSourceItem == null)
             {
@@ -970,7 +1037,8 @@ namespace GongSolutions.Wpf.DragDrop
             // already selected item does not change the selection, otherwise dragging multiple items 
             // is made impossible.
             var itemsControl = sender as ItemsControl;
-            if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0 && (Keyboard.Modifiers & ModifierKeys.Control) == 0 && m_DragInfo.VisualSourceItem != null && itemsControl != null && itemsControl.CanSelectMultipleItems())
+            if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0 && (Keyboard.Modifiers & ModifierKeys.Control) == 0 &&
+                m_DragInfo.VisualSourceItem != null && itemsControl != null && itemsControl.CanSelectMultipleItems())
             {
                 var selectedItems = itemsControl.GetSelectedItems().OfType<object>().ToList();
                 if (selectedItems.Count > 1 && selectedItems.Contains(m_DragInfo.SourceItem))
@@ -981,9 +1049,6 @@ namespace GongSolutions.Wpf.DragDrop
             }
 
             // ((ItemsControl)sender).ReleaseStylusCapture();
-
-
-
         }
 
         private static void DragSource_PreviewMouseLeftButtonUp(object sender, InputEventArgs e)
@@ -1014,12 +1079,7 @@ namespace GongSolutions.Wpf.DragDrop
                     itemsControl.SetSelectedItem(m_DragInfo.SourceItem);
                 }
             }
-            var iCOntrol = sender as ItemsControl; //switch on autoscroll back
-            if (iCOntrol != null)
-            {
-                var parent = iCOntrol.Parent as ScrollViewer;
-                if (parent != null) parent.PanningMode = PanningMode.VerticalOnly;
-            }
+            ActivateScrolling(sender);
 
             m_DragInfo = null;
             m_ClickSupressItem = null;
@@ -1028,45 +1088,57 @@ namespace GongSolutions.Wpf.DragDrop
 
         }
 
-        private static void ResetScale()
+        private static void ActivateScrolling(object sender)
         {
-            var sourceItem = m_DragInfo?.SourceItem;
-            var uiElement = sourceItem as UIElement;
-
-            var visualSourceItem = m_DragInfo?.VisualSourceItem;
-
-
-            if (uiElement == null)
+            var iCOntrol = sender as ItemsControl; //switch on autoscroll back
+            if (iCOntrol != null)
             {
-                uiElement = visualSourceItem;
-            }
-
-
-            if (currentElement != null && uiElement != null)
-            {
-                var isElementWithTimer = currentElement.ReadLocalValue(BreakFreeTriggerTime) != DependencyProperty.UnsetValue;
-                if (isElementWithTimer)
+                var parent = iCOntrol.Parent as ScrollViewer;
+                if (parent != null)
                 {
-                    ScaleTransform scaleTrans = new ScaleTransform();
-                    scaleTrans.ScaleX = GetAdornerScaleFactorProperty(uiElement);
-                    scaleTrans.ScaleY = GetAdornerScaleFactorProperty(uiElement);
-                    uiElement.RenderTransform = scaleTrans;
-                }
+                    //PropertyInfo highlightedItemProperty =
+                    //    iCOntrol.GetType()
+                    //        .GetProperties(BindingFlags.NonPublic | BindingFlags.Instance)
+                    //        .Single(pi => pi.Name == "ItemsHost");
+                    //object host = highlightedItemProperty.GetValue(iCOntrol, null);
+                    //var stackPanel = host as StackPanel;
+                    //if (stackPanel != null)
+                    //{
+                    //    var orientation = stackPanel.Orientation;
+                    //    parent.PanningMode = orientation == Orientation.Vertical
+                    //                                     ? PanningMode.VerticalOnly
+                    //                                       : PanningMode.HorizontalOnly;
+                    //    Debug.WriteLine("orientation changed");
+                    parent.PanningMode = parent.VerticalScrollBarVisibility == ScrollBarVisibility.Visible
+                                                        ? PanningMode.VerticalOnly
+                                                          : PanningMode.HorizontalOnly;
+
+                   // }
+
+
+            }
             }
         }
 
 
         private static void DragSource_PreviewMouseMove(object sender, InputEventArgs e)
         {
-            if (!CanDragStart)
-            {
-               
-                return;
-            }
-            dispatcherTimer.Stop();
+            //if (!CanDragStart)
+            //{
+            //    Debug.WriteLine("returned from move");
+            //    return;
+            //}
 
+          //  Debug.WriteLine($"m_DragInfo is {m_DragInfo} m_DragInProgress is {m_DragInProgress} ");
             if (m_DragInfo != null && !m_DragInProgress)
             {
+
+                dispatcherTimer.Stop();
+
+                if (currentElement != null)
+                {
+                    SetDragSourceIgnore(currentElement, false);
+                }
                 // do nothing if mouse left button is released
                 //if (e.LeftButton == MouseButtonState.Released)
                 //{
@@ -1127,6 +1199,7 @@ namespace GongSolutions.Wpf.DragDrop
                             }                           
                             finally
                             {
+                                ActivateScrolling(sender);
                                 m_DragInProgress = false;
                             }
 
@@ -1306,7 +1379,7 @@ namespace GongSolutions.Wpf.DragDrop
             dropHandler.Drop(dropInfo);
             dragHandler.Dropped(dropInfo);
 
-
+          
             e.Handled = !dropInfo.NotHandled;
         }
 
@@ -1378,6 +1451,9 @@ namespace GongSolutions.Wpf.DragDrop
         private static DragAdorner m_DragAdorner;
         private static DragAdorner m_EffectAdorner;
         private static DragInfo m_DragInfo;
+        private static DragInfo temp_DragInfo;
+        private static PanningMode lastPanningMode;
+
         private static bool m_DragInProgress;
         private static DropTargetAdorner m_DropTargetAdorner;
         private static object m_ClickSupressItem;
