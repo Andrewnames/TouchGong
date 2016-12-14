@@ -480,24 +480,35 @@ namespace GongSolutions.Wpf.DragDrop
 
             if ((bool)e.NewValue == true)
             {
-              
-             //   uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
-                uiElement.PreviewTouchDown += DragSource_PreviewMouseLeftButtonDown;
-              //  uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
+#if DEBUG
+                //   uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
+                //  uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
+                //   uiElement.PreviewMouseMove += DragSource_PreviewMouseMove;
+#else
+   uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
+  uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
+   uiElement.PreviewMouseMove += DragSource_PreviewMouseMove;
+#endif
+                uiElement.PreviewTouchDown += DragSource_PreviewMouseLeftButtonDown; //**********touch
                 uiElement.PreviewTouchUp += DragSource_PreviewMouseLeftButtonUp;
-            //   uiElement.PreviewMouseMove += DragSource_PreviewMouseMove;
                 uiElement.StylusMove += DragSource_PreviewMouseMove;
                 uiElement.QueryContinueDrag += DragSource_QueryContinueDrag;
                 
             }
             else
             {
-              //  uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
+#if DEBUG
+//  uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
+//  uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
+//  uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
+#else
+      uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
+  uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
+  uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
+#endif
                 uiElement.PreviewTouchDown -= DragSource_PreviewMouseLeftButtonDown;//**********touch
-              //  uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
                 uiElement.PreviewTouchUp -= DragSource_PreviewMouseLeftButtonUp;
-              //  uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
-                uiElement.StylusMove -= DragSource_PreviewMouseMove;//**********touch
+                uiElement.StylusMove -= DragSource_PreviewMouseMove;
                 uiElement.QueryContinueDrag -= DragSource_QueryContinueDrag;
                 
             }
