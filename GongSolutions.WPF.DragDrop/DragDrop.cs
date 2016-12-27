@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -36,7 +35,7 @@ namespace GongSolutions.Wpf.DragDrop
         }
 
 
-       
+
 
         public static readonly DataFormat DataFormat = DataFormats.GetDataFormat("GongSolutions.Wpf.DragDrop");
 
@@ -493,14 +492,14 @@ namespace GongSolutions.Wpf.DragDrop
                 uiElement.PreviewTouchUp += DragSource_PreviewMouseLeftButtonUp;
                 uiElement.StylusMove += DragSource_PreviewMouseMove;
                 uiElement.QueryContinueDrag += DragSource_QueryContinueDrag;
-                
+
             }
             else
             {
 #if DEBUG
-//  uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
-//  uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
-//  uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
+                //  uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
+                //  uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
+                //  uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
 #else
       uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
   uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
@@ -510,11 +509,11 @@ namespace GongSolutions.Wpf.DragDrop
                 uiElement.PreviewTouchUp -= DragSource_PreviewMouseLeftButtonUp;
                 uiElement.StylusMove -= DragSource_PreviewMouseMove;
                 uiElement.QueryContinueDrag -= DragSource_QueryContinueDrag;
-                
+
             }
         }
 
-     
+
 
         private static void IsDropTargetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -883,9 +882,9 @@ namespace GongSolutions.Wpf.DragDrop
             var sourceItem = temp_DragInfo?.SourceItem;
             var uiElement = sourceItem as UIElement;
 
-          
+
             var visualSourceItem = temp_DragInfo?.VisualSourceItem;
-           
+
             var idleTickCount = MouseUtilities.GetIdleTickCount();
             Debug.WriteLine($"last interaction was  = {idleTickCount} ticks ago");
             if (idleTickCount > 100) // user not interacting with control
@@ -906,7 +905,7 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void AnimateScale(UIElement uiElement)
         {
-           
+
 
             CanDragStart = true;
             var iCOntrol = currentElement as ItemsControl;
@@ -924,7 +923,7 @@ namespace GongSolutions.Wpf.DragDrop
 
             //var frameworkElement = (uiElement as FrameworkElement);
             //frameworkElement.BringToFront();
-           
+
         }
 
         private static void ResetScale()
@@ -970,22 +969,22 @@ namespace GongSolutions.Wpf.DragDrop
                 if (!isElementWithTimer)
                 {
                     currentElement = null;
-                  
+
                     CanDragStart = true;
                 }
                 else
                 {
                     CanDragStart = false;
                     dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, GetBreakFreeTriggerTime(currentElement));
-                    
+
                     InitDragInfo(sender, e);
                     temp_DragInfo = m_DragInfo;
                     dispatcherTimer.Start();
-                   
-                   // m_DragInfo = null;
-                    
-                   ((ItemsControl)sender).ReleaseStylusCapture();
-                   // return;
+
+                    // m_DragInfo = null;
+
+                    ((ItemsControl)sender).ReleaseStylusCapture();
+                    // return;
                 }
             }
 
@@ -1013,17 +1012,19 @@ namespace GongSolutions.Wpf.DragDrop
             }
 
             var iCOntrol = sender as ItemsControl; // switch off autoscroll for touch
-            if (iCOntrol != null )
+            if (iCOntrol != null)
             {
                 var parent = iCOntrol.Parent as ScrollViewer;
                 if (parent != null)
                 {
+
                     parent.PanningMode = PanningMode.None;
+                    lastScrollViewer = parent;
                 }
             }
 
             InitDragInfo(sender, e);
-           
+
         }
 
         private static void InitDragInfo(object sender, InputEventArgs e)
@@ -1107,27 +1108,21 @@ namespace GongSolutions.Wpf.DragDrop
                 var parent = iCOntrol.Parent as ScrollViewer;
                 if (parent != null)
                 {
-                    //PropertyInfo highlightedItemProperty =
-                    //    iCOntrol.GetType()
-                    //        .GetProperties(BindingFlags.NonPublic | BindingFlags.Instance)
-                    //        .Single(pi => pi.Name == "ItemsHost");
-                    //object host = highlightedItemProperty.GetValue(iCOntrol, null);
-                    //var stackPanel = host as StackPanel;
-                    //if (stackPanel != null)
-                    //{
-                    //    var orientation = stackPanel.Orientation;
-                    //    parent.PanningMode = orientation == Orientation.Vertical
-                    //                                     ? PanningMode.VerticalOnly
-                    //                                       : PanningMode.HorizontalOnly;
-                    //    Debug.WriteLine("orientation changed");
+
                     parent.PanningMode = parent.VerticalScrollBarVisibility == ScrollBarVisibility.Visible
                                                         ? PanningMode.VerticalOnly
                                                           : PanningMode.HorizontalOnly;
+                }
+                else
+                {
+                    if (lastScrollViewer != null)
+                    {
+                        lastScrollViewer.PanningMode = lastScrollViewer.VerticalScrollBarVisibility == ScrollBarVisibility.Visible
+                                                       ? PanningMode.VerticalOnly
+                                                         : PanningMode.HorizontalOnly;
+                    }
 
-                   // }
-
-
-            }
+                }
             }
         }
 
@@ -1140,7 +1135,7 @@ namespace GongSolutions.Wpf.DragDrop
             //    return;
             //}
 
-          //  Debug.WriteLine($"m_DragInfo is {m_DragInfo} m_DragInProgress is {m_DragInProgress} ");
+            //  Debug.WriteLine($"m_DragInfo is {m_DragInfo} m_DragInProgress is {m_DragInProgress} ");
             if (m_DragInfo != null && !m_DragInProgress)
             {
 
@@ -1162,8 +1157,8 @@ namespace GongSolutions.Wpf.DragDrop
                 var abs = Math.Abs(position.X - dragStart.X);
                 var abs2 = Math.Abs(position.Y - dragStart.Y);
                 if (m_DragInfo.VisualSource.Equals(sender)
-            && (abs-15 > SystemParameters.MinimumHorizontalDragDistance ||
-                     abs2-15 > SystemParameters.MinimumVerticalDragDistance))
+            && (abs - 15 > SystemParameters.MinimumHorizontalDragDistance ||
+                     abs2 - 15 > SystemParameters.MinimumVerticalDragDistance))
                 {
                     var dragHandler = TryGetDragHandler(m_DragInfo, sender as UIElement);
                     if (dragHandler.CanStartDrag(m_DragInfo))
@@ -1192,13 +1187,13 @@ namespace GongSolutions.Wpf.DragDrop
                             }
                             catch (DragDropCanceledException ex)
                             {
-                                //var source = m_DragInfo?.VisualSource;
-                                //if (source is ItemsControl)
-                                //{
-                                //    dynamic senderContext = (source as ItemsControl).DataContext;
-                                //    senderContext.DragCancelled();
-                                  
-                                //}
+                                var source = m_DragInfo?.VisualSource;
+                                if (source is ItemsControl)
+                                {
+                                    dynamic senderContext = (source as ItemsControl).DataContext;
+                                    senderContext.DragCancelled();
+
+                                }
 
                             }
                             catch (Exception ex)
@@ -1207,7 +1202,7 @@ namespace GongSolutions.Wpf.DragDrop
                                 {
                                     throw;
                                 }
-                            }                           
+                            }
                             finally
                             {
                                 ActivateScrolling(sender);
@@ -1376,6 +1371,7 @@ namespace GongSolutions.Wpf.DragDrop
         private static void DropTarget_PreviewDrop(object sender, DragEventArgs e)
         {
             ResetScale();
+            //ActivateScrolling(sender);
             var dropInfo = new DropInfo(sender, e, m_DragInfo);
             var dropHandler = TryGetDropHandler(dropInfo, sender as UIElement);
             var dragHandler = TryGetDragHandler(m_DragInfo, sender as UIElement);
@@ -1390,7 +1386,7 @@ namespace GongSolutions.Wpf.DragDrop
             dropHandler.Drop(dropInfo);
             dragHandler.Dropped(dropInfo);
 
-          
+
             e.Handled = !dropInfo.NotHandled;
         }
 
@@ -1464,7 +1460,7 @@ namespace GongSolutions.Wpf.DragDrop
         private static DragInfo m_DragInfo;
         private static DragInfo temp_DragInfo;
         private static PanningMode lastPanningMode;
-
+        private static ScrollViewer lastScrollViewer;
         private static bool m_DragInProgress;
         private static DropTargetAdorner m_DropTargetAdorner;
         private static object m_ClickSupressItem;
@@ -1474,7 +1470,7 @@ namespace GongSolutions.Wpf.DragDrop
         private static System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
         private static UIElement currentElement;
         private static bool CanDragStart = true;
-        
+
     }
 
     public static class InputEventArgsExtensions
