@@ -479,15 +479,10 @@ namespace GongSolutions.Wpf.DragDrop
 
             if ((bool)e.NewValue == true)
             {
-#if DEBUG
-                //   uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
-                //  uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
-                //   uiElement.PreviewMouseMove += DragSource_PreviewMouseMove;
-#else
-   uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
-  uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
-   uiElement.PreviewMouseMove += DragSource_PreviewMouseMove;
-#endif
+
+                uiElement.PreviewMouseLeftButtonDown += DragSource_PreviewMouseLeftButtonDown;
+                uiElement.PreviewMouseLeftButtonUp += DragSource_PreviewMouseLeftButtonUp;
+                uiElement.PreviewMouseMove += DragSource_PreviewMouseMove;
                 uiElement.PreviewTouchDown += DragSource_PreviewMouseLeftButtonDown; //**********touch
                 uiElement.PreviewTouchUp += DragSource_PreviewMouseLeftButtonUp;
                 uiElement.StylusMove += DragSource_PreviewMouseMove;
@@ -496,15 +491,10 @@ namespace GongSolutions.Wpf.DragDrop
             }
             else
             {
-#if DEBUG
-                //  uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
-                //  uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
-                //  uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
-#else
-      uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
-  uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
-  uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
-#endif
+
+                uiElement.PreviewMouseLeftButtonDown -= DragSource_PreviewMouseLeftButtonDown;
+                uiElement.PreviewMouseLeftButtonUp -= DragSource_PreviewMouseLeftButtonUp;
+                uiElement.PreviewMouseMove -= DragSource_PreviewMouseMove;
                 uiElement.PreviewTouchDown -= DragSource_PreviewMouseLeftButtonDown;//**********touch
                 uiElement.PreviewTouchUp -= DragSource_PreviewMouseLeftButtonUp;
                 uiElement.StylusMove -= DragSource_PreviewMouseMove;
@@ -519,7 +509,7 @@ namespace GongSolutions.Wpf.DragDrop
         {
             var uiElement = (UIElement)d;
 
-            if ((bool)e.NewValue == true)
+            if ((bool)e.NewValue)
             {
                 uiElement.AllowDrop = true;
 
@@ -887,7 +877,7 @@ namespace GongSolutions.Wpf.DragDrop
 
             var idleTickCount = MouseUtilities.GetIdleTickCount();
             Debug.WriteLine($"last interaction was  = {idleTickCount} ticks ago");
-            if (idleTickCount > 100) // user not interacting with control
+            if (idleTickCount > 100 && Mouse.LeftButton!=MouseButtonState.Pressed) // user not interacting with control
             {
                 dispatcherTimer.Stop();
                 return;
@@ -983,7 +973,7 @@ namespace GongSolutions.Wpf.DragDrop
 
                     // m_DragInfo = null;
 
-                    ((ItemsControl)sender).ReleaseStylusCapture();
+                   // ((ItemsControl)sender).ReleaseStylusCapture();
                     // return;
                 }
             }
