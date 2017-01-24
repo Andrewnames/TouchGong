@@ -122,7 +122,7 @@ namespace GongSolutions.Wpf.DragDrop.Utilities
       VisualTreeHelper.HitTest(itemsControl,
         obj =>
         {
-          if (obj is Viewport3D)
+          if (obj is Viewport3D || obj is ScrollBar)
           {
             return HitTestFilterBehavior.Stop;
           }

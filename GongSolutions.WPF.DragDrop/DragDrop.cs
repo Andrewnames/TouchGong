@@ -637,8 +637,6 @@ namespace GongSolutions.Wpf.DragDrop
                         contentPresenter.SetValue(FrameworkElement.MinWidthProperty, bounds.Width);
                         contentPresenter.SetValue(FrameworkElement.MinHeightProperty, bounds.Height);
                     }
-
-
                     adornment = contentPresenter;
                 }
             }
@@ -652,6 +650,7 @@ namespace GongSolutions.Wpf.DragDrop
 
                 var rootElement = RootElementFinder.FindRoot(dropInfo.VisualTarget ?? m_DragInfo.VisualSource);
                 DragAdorner = new DragAdorner(rootElement, adornment);
+                DragAdorner.UpdateLayout();// another flicker fix
 
             }
         }
@@ -876,8 +875,8 @@ namespace GongSolutions.Wpf.DragDrop
             var visualSourceItem = temp_DragInfo?.VisualSourceItem;
 
             var idleTickCount = MouseUtilities.GetIdleTickCount();
-            Debug.WriteLine($"last interaction was  = {idleTickCount} ticks ago");
-            if (idleTickCount > 100 && Mouse.LeftButton!=MouseButtonState.Pressed) // user not interacting with control
+         //   Debug.WriteLine($"last interaction was  = {idleTickCount} ticks ago");
+            if (idleTickCount > 100 && Mouse.LeftButton != MouseButtonState.Pressed) // user not interacting with control
             {
                 dispatcherTimer.Stop();
                 return;
@@ -901,7 +900,7 @@ namespace GongSolutions.Wpf.DragDrop
             var iCOntrol = currentElement as ItemsControl;
             var parent = iCOntrol?.Parent as ScrollViewer;
             m_DragInfo = temp_DragInfo;
-            Debug.WriteLine($"timer ticked at {DateTime.Now} with m_DragInfo = {m_DragInfo}");
+          //  Debug.WriteLine($"timer ticked at {DateTime.Now} with m_DragInfo = {m_DragInfo}");
             if (parent != null) parent.PanningMode = PanningMode.None;
 
             uiElement.RenderTransformOrigin = new Point(0.5, 0.5);
@@ -952,6 +951,7 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DragSource_PreviewMouseLeftButtonDown(object sender, InputEventArgs e)
         {
+            _adornerSize = new Size(0, 0);
             currentElement = sender as UIElement;
             if (currentElement != null)
             {
@@ -973,7 +973,7 @@ namespace GongSolutions.Wpf.DragDrop
 
                     // m_DragInfo = null;
 
-                   // ((ItemsControl)sender).ReleaseStylusCapture();
+                    // ((ItemsControl)sender).ReleaseStylusCapture();
                     // return;
                 }
             }
@@ -1057,6 +1057,7 @@ namespace GongSolutions.Wpf.DragDrop
         {
             dispatcherTimer.Stop();
             ResetScale();
+         
 
 
             var elementPosition = e.GetPosition((IInputElement)sender);
@@ -1144,11 +1145,14 @@ namespace GongSolutions.Wpf.DragDrop
                 var dragStart = m_DragInfo.DragStartPosition;
                 var position = e.GetPosition((IInputElement)sender);
 
+                // prevent selection changing while drag operation
+                m_DragInfo.VisualSource?.ReleaseMouseCapture();
+
                 var abs = Math.Abs(position.X - dragStart.X);
                 var abs2 = Math.Abs(position.Y - dragStart.Y);
-                if (m_DragInfo.VisualSource.Equals(sender)
-            && (abs - 15 > SystemParameters.MinimumHorizontalDragDistance ||
-                     abs2 - 15 > SystemParameters.MinimumVerticalDragDistance))
+                if (m_DragInfo.VisualSource != null && (m_DragInfo.VisualSource.Equals(sender)
+                                                        && (abs /*- 15 */> SystemParameters.MinimumHorizontalDragDistance ||
+                                                            abs2 /*- 15 */> SystemParameters.MinimumVerticalDragDistance)))
                 {
                     var dragHandler = TryGetDragHandler(m_DragInfo, sender as UIElement);
                     if (dragHandler.CanStartDrag(m_DragInfo))
@@ -1182,9 +1186,7 @@ namespace GongSolutions.Wpf.DragDrop
                                 {
                                     dynamic senderContext = (source as ItemsControl).DataContext;
                                     senderContext.DragCancelled();
-
                                 }
-
                             }
                             catch (Exception ex)
                             {
@@ -1231,7 +1233,7 @@ namespace GongSolutions.Wpf.DragDrop
 
         private static void DropTarget_PreviewDragOver(object sender, DragEventArgs e)
         {
-
+          
 
             var elementPosition = e.GetPosition((IInputElement)sender);
 
@@ -1248,17 +1250,23 @@ namespace GongSolutions.Wpf.DragDrop
 
             if (DragAdorner != null)
             {
+               
                 var tempAdornerPos = e.GetPosition(DragAdorner.AdornedElement);
-
+                
                 if (tempAdornerPos.X >= 0 && tempAdornerPos.Y >= 0)
                 {
                     _adornerPos = tempAdornerPos;
                 }
 
+
                 // Fixed the flickering adorner - Size changes to zero 'randomly'...?
                 if (DragAdorner.RenderSize.Width > 0 && DragAdorner.RenderSize.Height > 0)
                 {
                     _adornerSize = DragAdorner.RenderSize;
+                }
+                else
+                {
+                    
                 }
 
                 if (m_DragInfo != null)
@@ -1277,12 +1285,11 @@ namespace GongSolutions.Wpf.DragDrop
                     var adornerPosRightX = (_adornerPos.X + _adornerSize.Width);
                     if (adornerPosRightX > maxAdornerPosX)
                     {
-                        _adornerPos.Offset(-adornerPosRightX + maxAdornerPosX, 0);
-
-                    }
+                       _adornerPos.Offset(-adornerPosRightX + maxAdornerPosX, 0);
+                 }
                     if (_adornerPos.Y < 0)
                     {
-                        _adornerPos.Y = 0;
+                       _adornerPos.Y = 0;
                     }
                 }
 
@@ -1291,7 +1298,6 @@ namespace GongSolutions.Wpf.DragDrop
                     DragAdorner.MousePosition = _adornerPos;
                     DragAdorner.InvalidateVisual();
                 }
-
             }
 
             if (HitTestUtilities.HitTest4Type<ScrollBar>(sender, elementPosition)
@@ -1356,6 +1362,7 @@ namespace GongSolutions.Wpf.DragDrop
             }
 
             Scroll(dropInfo.TargetScrollViewer, e);
+          
         }
 
         private static void DropTarget_PreviewDrop(object sender, DragEventArgs e)
