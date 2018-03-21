@@ -74,19 +74,20 @@ namespace GongSolutions.Wpf.DragDrop.Utilities
       }
     }
 
-    public static UIElement GetItemContainer(this ItemsControl itemsControl, UIElement child)
-    {
-      bool isItemContainer;
-      var itemType = GetItemContainerType(itemsControl, out isItemContainer);
+        public static UIElement GetItemContainer(this ItemsControl itemsControl, DependencyObject child)
+        {
+            bool isItemContainer;
+            var itemType = GetItemContainerType(itemsControl, out isItemContainer);
 
-      if (itemType != null) {
-        return isItemContainer
-                 ? (UIElement)child.GetVisualAncestor(itemType, itemsControl)
-                 : (UIElement)child.GetVisualAncestor(itemType, itemsControl.GetType());
-      }
+            if (itemType != null)
+            {
+                return isItemContainer
+                         ? (UIElement)child.GetVisualAncestor(itemType, itemsControl)
+                         : (UIElement)child.GetVisualAncestor(itemType, itemsControl.GetType());
+            }
 
-      return null;
-    }
+            return null;
+        }
 
     public static UIElement GetItemContainerAt(this ItemsControl itemsControl, Point position)
     {

@@ -12,6 +12,6 @@ using System.Windows.Markup;
 // The following GUID is for the ID of the typelib if this project is exposed to COM
 [assembly: Guid("940084f7-d48e-41b3-9e0d-cf574d587643")]
 
-[assembly: AssemblyTitle("GongSolutions.WPF.DragDrop")]
+[assembly: AssemblyTitle("TouchGong")]
 [assembly: AssemblyDescription("An easy to use drag'n'drop framework for WPF applications.")]
 [assembly: AssemblyCopyright("Copyright © GongSolutions.WPF.DragDrop 2013 - 2016")]

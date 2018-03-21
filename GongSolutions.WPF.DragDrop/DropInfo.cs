@@ -206,7 +206,7 @@ namespace GongSolutions.Wpf.DragDrop
             {
                 this.VisualTargetItem = this.VisualTarget;
             }
-          //  System.Diagnostics.Debug.WriteLine("==> DropInfo: pos={0}, idx={1},  Item={2}", this.InsertPosition, this.InsertIndex,  item);
+         //  System.Diagnostics.Debug.WriteLine("==> DropInfo: pos={0}, idx={1},  Item={2}", this.InsertPosition, this.InsertIndex,  item);
 
         }
 
