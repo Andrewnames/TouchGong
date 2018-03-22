@@ -13,6 +13,7 @@ using GongSolutions.Wpf.DragDrop.Icons;
 using GongSolutions.Wpf.DragDrop.Utilities;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using System.Threading;
 
 namespace GongSolutions.Wpf.DragDrop
 {
@@ -1054,7 +1055,11 @@ namespace GongSolutions.Wpf.DragDrop
             m_DragInfo = new DragInfo(sender, e);
             m_DragInfo.VisualSource?.Focus();
             // Debug.WriteLine($"dragInfo by {e.Device} initialized  at {DateTime.Now}");
-
+            while (m_DragInfo==null)
+            {
+                m_DragInfo = new DragInfo(sender, e);
+              
+            }
             if (m_DragInfo.VisualSourceItem == null)
             {
                 m_DragInfo = null;
